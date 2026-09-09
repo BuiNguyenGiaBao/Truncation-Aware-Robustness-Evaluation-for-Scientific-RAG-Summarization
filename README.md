@@ -4,7 +4,7 @@ This repository contains the code and released evaluation artifacts for the stud
 
 **Truncation-Aware Robustness Evaluation for Scientific RAG Summarization: A Proof-of-Concept Study with BART and T5**
 
-Authors: **Bui Nguyen Gia Bao, Tran Le Van, and Le Nhat Tung**
+Authors: **Bui Nguyen Gia Bao and Le Nhat Tung**
 
 The project studies a measurement-validity problem in retrieval-augmented generation (RAG) summarization: when noisy retrieved context increases input length, model-specific tokenization may truncate part of the intended evidence. A model can therefore appear robust even when it was not exposed to all injected noise.
 
