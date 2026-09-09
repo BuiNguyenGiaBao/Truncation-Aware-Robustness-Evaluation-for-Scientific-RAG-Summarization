@@ -1,337 +1,591 @@
-# Truncation-Aware Evaluation Protocol for Noise-Aware RAG Summarization
+# Truncation-Aware Robustness Evaluation for Scientific RAG Summarization
 
-## Overview
+This repository contains the code and released evaluation artifacts for the study:
 
-This repository contains the experimental pipeline, dataset construction scripts, evaluation metrics, and manuscript files for a study on **truncation-aware robustness evaluation** in retrieval-augmented generation (RAG) summarization.
+**Truncation-Aware Robustness Evaluation for Scientific RAG Summarization: A Proof-of-Concept Study with BART and T5**
 
-The core contribution is not a new summarization model. Instead, this project proposes an **evaluation protocol** for deciding when a robustness claim under retrieval noise is reliable. In particular, the protocol checks whether apparent robustness is genuine or whether it may be inflated by input truncation, especially under additive-noise settings.
+Authors: **Bui Nguyen Gia Bao, Tran Le Van, and Le Nhat Tung**
 
-## Vietnamese Summary
+The project studies a measurement-validity problem in retrieval-augmented generation (RAG) summarization: when noisy retrieved context increases input length, model-specific tokenization may truncate part of the intended evidence. A model can therefore appear robust even when it was not exposed to all injected noise.
 
-Kho lưu trữ này chứa mã nguồn, quy trình tạo dữ liệu, script đánh giá và bản thảo bài báo cho nghiên cứu về **giao thức đánh giá robustness có xét đến truncation** trong bài toán tóm tắt văn bản khoa học bằng RAG.
+The goal of this repository is **not** to claim a new state-of-the-art summarization architecture. Instead, it provides a reproducible proof-of-concept pipeline for separating:
 
-Đóng góp chính của nghiên cứu không phải là một mô hình mới, mà là một **khung đánh giá** giúp xác định khi nào một tuyên bố “mô hình chống nhiễu tốt” là đáng tin cậy. Điểm quan trọng là tách bạch giữa:
+1. intended context composition,
+2. model-specific truncation,
+3. evidence status,
+4. paired performance differences, and
+5. clean/noisy trade-offs.
 
-- mô hình thật sự robust với nhiễu truy hồi;
-- mô hình có vẻ robust vì phần nhiễu đã bị cắt mất do giới hạn độ dài đầu vào.
+---
 
-## Research Motivation
+## 1. Repository Status
 
-RAG summarization systems can be affected by noisy retrieved context. However, robustness evaluation is often confounded by input length. When additive noise is appended to clean context, the input becomes longer and may exceed the model maximum source length. If noisy chunks are truncated before reaching the encoder, high robustness scores may be misleading.
-
-This project addresses that issue by introducing a truncation-aware evaluation protocol that combines:
-
-1. clean-context evaluation;
-2. additive-noise evaluation;
-3. substitutive-noise evaluation;
-4. retrieval diagnostics;
-5. model-specific truncation diagnostics;
-6. robustness degradation analysis;
-7. statistical testing;
-8. net utility analysis.
-
-## Main Contribution
-
-The main contribution is a **truncation-aware evaluation framework** for noise-aware RAG summarization.
-
-The framework evaluates whether robustness claims remain valid after checking:
-
-- whether retrieved distractors are actually present in the final context;
-- whether the input is heavily truncated;
-- whether additive-noise gains persist under substitutive noise;
-- whether performance gains are practically meaningful after accounting for clean-condition degradation;
-- whether results are supported by paired statistical tests.
-
-## Experimental Design
-
-### Models
-
-The main experiments use:
-
-- `facebook/bart-base`
-- `google-t5/t5-base`
-
-Each architecture has two variants:
-
-- **clean-matched baseline**: trained on clean contexts;
-- **noise-aware model**: trained on clean and noisy contexts.
-
-BART-base is used as the main case study because its truncation profile is more stable. T5-base is treated as a diagnostic baseline, especially because T5-base additive-noise inputs can suffer from high truncation.
-
-### Data Conditions
-
-The evaluation uses five test conditions:
-
-| Condition | Description |
-|---|---|
-| `test_clean` | Clean retrieved context only |
-| `test_noisy_easy_additive` | Clean context plus easy distractor chunks |
-| `test_noisy_hard_additive` | Clean context plus hard distractor chunks |
-| `test_noisy_easy_substitutive` | Some clean chunks replaced by easy distractors |
-| `test_noisy_hard_substitutive` | Some clean chunks replaced by hard distractors |
-
-### Why Additive and Substitutive Noise?
-
-Additive noise tests robustness when distractors are appended to clean context. However, this can increase input length and cause truncation.
-
-Substitutive noise replaces part of the clean context with distractors while keeping the number of chunks more comparable. This makes it a more reliable length-controlled diagnostic setting.
-
-## Metrics
-
-The evaluation package computes the following groups of metrics.
-
-### Summarization Quality
-
-- ROUGE-1
-- ROUGE-2
-- ROUGE-L
-- ROUGE-Lsum
-- BERTScore Precision / Recall / F1
-
-### Retrieval Diagnostics
-
-- Hit@K
-- Precision@K
-- Recall@K
-- MRR
-- nDCG@K
-- noise chunk ratio
-
-Retrieval relevance is approximated by **source-document membership**. This proxy checks whether retrieved chunks come from the target paper, but it does not guarantee that each chunk contains summary-relevant evidence.
-
-### Truncation Diagnostics
-
-- source token length
-- target token length
-- prediction token length
-- source truncation risk
-- target truncation risk
-- model-specific truncation rate
-
-Model-specific truncation is important because BART and T5 use different tokenizers.
-
-### Robustness Metrics
-
-- retention rate
-- absolute degradation
-- relative degradation
-- additive vs. substitutive comparison
-
-### Faithfulness Proxies
-
-- source-supported entity rate
-- unsupported entity rate
-- number preservation
-- source token support rate
-- sentence support proxy
-
-These are treated as lightweight faithfulness proxies, not as full factual consistency metrics.
-
-### Statistical Tests
-
-- paired t-test
-- Wilcoxon signed-rank test
-- Cohen's dz
-- Cliff's delta
-- rank-biserial correlation
-- bootstrap 95% confidence interval
-- Holm-Bonferroni correction
-
-## Repository Structure
-
-A recommended repository structure is:
+The current public repository contains source code and aggregate evaluation artifacts used by the study.
 
 ```text
 .
 ├── README.md
-├── paper/
-│   ├── main_evaluation_framework_final.tex
-│   └── main_evaluation_framework_final.pdf
-├── data_builder/
-│   ├── databuildt_fixed_v2.py
+├── src/
+│   ├── databuildt.py
+│   ├── eval.py
 │   ├── retrieval_tokenizer.py
 │   ├── rulebase_chunkforpdf.py
-│   └── summarized.py
-├── training/
-│   ├── train_bart_t5_runpod_v2.py
-│   ├── run_train_bart_t5_auto_1epoch.sh
-│   └── requirements_train_runpod_v2.txt
-├── evaluation/
-│   ├── eval_rankB_metrics_runpod.py
-│   ├── run_rankB_metrics_full.sh
-│   ├── run_rankB_metrics_from_predictions.sh
-│   ├── run_rankB_metrics_rouge_only.sh
-│   └── requirements_rankB_metrics.txt
-├── outputs/
-│   ├── rankB_compact_paper_table.csv
-│   ├── rankB_metrics_summary.csv
-│   ├── rankB_robustness_degradation.csv
-│   ├── rankB_retrieval_summary.csv
-│   ├── rankB_truncation_summary.csv
-│   └── rankB_all_metrics_tables.xlsx
-└── prepared_data_rankB_fixed_v2/
-    ├── train_noiseaware.jsonl
-    ├── train_clean_matched.jsonl
-    ├── valid_noiseaware.jsonl
-    ├── valid_clean_matched.jsonl
-    ├── test_clean.jsonl
-    ├── test_noisy_easy_additive.jsonl
-    ├── test_noisy_hard_additive.jsonl
-    ├── test_noisy_easy_substitutive.jsonl
-    └── test_noisy_hard_substitutive.jsonl
+│   ├── summarized.py
+│   └── train/
+│       └── train_bart_t5_runpod.py
+└── metrics/
+    └── metrics_full/
+        ├── eval_config_rankB.json
+        ├── predictions/
+        ├── rankB_additive_vs_substitutive.csv
+        ├── rankB_all_metrics_tables.xlsx
+        ├── rankB_compact_paper_table.csv
+        ├── rankB_metrics_record_level.csv
+        ├── rankB_metrics_summary.csv
+        ├── rankB_paired_noiseaware_vs_clean.csv
+        ├── rankB_retrieval_summary.csv
+        ├── rankB_robustness_degradation.csv
+        └── rankB_truncation_summary.csv
 ```
 
-Large datasets and model checkpoints should normally be excluded from Git and stored externally.
+Large processed datasets and model checkpoints are not tracked in Git because of their size. The dataset-construction and training scripts are provided so that the experimental data and checkpoints can be reconstructed from the source dataset.
 
-## Environment
+---
 
-The experiments were designed for a RunPod environment with an NVIDIA RTX 4090 24GB GPU.
+## 2. Research Question
 
-Recommended Python environment:
+The study asks:
 
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements_train_runpod_v2.txt
-pip install -r requirements_rankB_metrics.txt
-```
+> **When a RAG summarization model appears robust to retrieval noise, was the model actually exposed to the intended noisy evidence after model-specific tokenization and truncation?**
 
-For BERTScore, PyTorch 2.6 or higher is recommended because recent Transformers versions restrict unsafe `torch.load` usage for older PyTorch versions.
+This distinction matters especially for additive-noise experiments, because adding distractor chunks increases source length and can trigger truncation.
 
-## Dataset Construction
+---
 
-Example command:
+## 3. Dataset
 
-```bash
-python databuildt_fixed_v2.py   --arxiv_dir ./dataset/arxiv   --output_dir ./prepared_data_rankB_fixed_v2   --train_limit 20000   --valid_limit 1000   --test_limit 500   --min_target_words 30   --max_target_words 512   --final_k 3   --noise_k 2   --min_chunks 1   --noise_pool_limit 10000   --noise_pool_strategy heldout_train_tail   --test_noise_pool_offset 30000   --test_noise_pool_limit 10000   --substitutive_clean_k 1   --num_workers 2   --encode_batch_size 16   --paper_batch 100   --clean_control_mode unique   --seed 42   --laptop_safe
-```
+The experiments use the **Cornell University arXiv Dataset** released on Kaggle:
 
-The generated test files should contain:
+https://www.kaggle.com/datasets/Cornell-University/arxiv
+
+The local pipeline uses:
+
+- article text for chunking and retrieval;
+- abstracts as reference summaries;
+- task-level summarization queries for distractor selection.
+
+The abstract is **not** used to construct the retrieval query.
+
+The section-aware chunker falls back to a word-window strategy when section detection is insufficient. The reported configuration uses approximately:
 
 ```text
-test_clean.jsonl
-test_noisy_easy_additive.jsonl
-test_noisy_hard_additive.jsonl
-test_noisy_easy_substitutive.jsonl
-test_noisy_hard_substitutive.jsonl
+chunk size     ≈ 150 words
+chunk overlap  = 30 words
 ```
 
-Each test condition contains 500 samples in the full experiment.
+Very short chunks are discarded.
 
-## Training
+---
 
-The training setup uses the same training budget for clean-matched and noise-aware variants.
+## 4. Experimental Conditions
 
-Example RunPod command:
+The paper uses five matched evaluation conditions.
 
-```bash
-cd /workspace
+| Paper terminology | Legacy file label | Context composition | Role |
+|---|---|---:|---|
+| Clean | `test_clean.jsonl` | 3 target chunks | Baseline |
+| Query-aligned additive | `test_noisy_easy_additive.jsonl` | 3 target + 2 distractors | Additive stress test |
+| Query-distant additive | `test_noisy_hard_additive.jsonl` | 3 target + 2 distractors | Additive stress test |
+| Query-aligned substitutive | `test_noisy_easy_substitutive.jsonl` | 1 target + 2 distractors | Length-controlled stress test |
+| Query-distant substitutive | `test_noisy_hard_substitutive.jsonl` | 1 target + 2 distractors | Length-controlled stress test |
 
-DATA_DIR=/workspace/prepared_data_rankB_fixed_v2 OUT_ROOT=/workspace/outputs/bart_t5_auto_1epoch ./run_train_bart_t5_auto_1epoch.sh
-```
-
-Expected output directories:
+The legacy labels `easy` and `hard` are retained only for file traceability:
 
 ```text
-/workspace/outputs/bart_t5_auto_1epoch/
-  01_bart_base_noiseaware/
-  02_bart_base_clean_matched/
-  03_t5_base_noiseaware/
-  04_t5_base_clean_matched/
+easy  -> query-aligned
+hard  -> query-distant
 ```
 
-## Evaluation
+They should **not** be interpreted as human-validated difficulty categories.
 
-After training, run the full evaluation:
+After noisy contexts are constructed, target and distractor chunks are merged and shuffled to reduce fixed-position bias.
 
-```bash
-cd /workspace
+---
 
-python eval_rankB_metrics_runpod.py   --data_dir /workspace/prepared_data_rankB_fixed_v2   --out_root /workspace/outputs/bart_t5_auto_1epoch   --output_dir /workspace/eval_outputs/rankB_metrics_full   --skip_generation   --max_source_length 1024   --max_target_length 512   --generation_max_length 320   --bertscore_batch_size 16   --bertscore_model roberta-large   --bertscore_max_length 512   --length_tokenizer facebook/bart-base
-```
+## 5. Models
 
-If BERTScore is too slow, run:
-
-```bash
-python eval_rankB_metrics_runpod.py   --data_dir /workspace/prepared_data_rankB_fixed_v2   --out_root /workspace/outputs/bart_t5_auto_1epoch   --output_dir /workspace/eval_outputs/rankB_metrics_rouge_only   --skip_generation   --skip_bertscore   --max_source_length 1024   --max_target_length 512   --generation_max_length 320   --length_tokenizer facebook/bart-base
-```
-
-## Main Output Files
-
-The evaluation script produces:
+The proof-of-concept experiments use:
 
 ```text
-rankB_metrics_record_level.csv
-rankB_metrics_summary.csv
-rankB_compact_paper_table.csv
-rankB_paired_noiseaware_vs_clean.csv
-rankB_robustness_degradation.csv
-rankB_additive_vs_substitutive.csv
-rankB_retrieval_summary.csv
-rankB_truncation_summary.csv
-rankB_all_metrics_tables.xlsx
+facebook/bart-base
+google-t5/t5-base
 ```
 
-Recommended files for reporting:
+For each architecture, two checkpoints are compared:
+
+```text
+clean-matched  -> trained on clean retrieval contexts
+noise-aware    -> trained on clean and noisy retrieval contexts
+```
+
+The experiments are intended as a **proof-of-concept demonstration of the evaluation framework**, not as a benchmark-level comparison of BART and T5.
+
+---
+
+## 6. Exact Training Configuration
+
+The reported runs use the following configuration.
+
+| Parameter | BART-base | T5-base |
+|---|---:|---:|
+| Training epochs | 1 | 1 |
+| Optimizer | AdamW (`adamw_torch`) | AdamW (`adamw_torch`) |
+| Learning rate | `3e-5` | `3e-5` |
+| Weight decay | `0.01` | `0.01` |
+| Warmup ratio | `0.03` | `0.03` |
+| Max source length | `1024` | `1024` |
+| Max target length | `512` | `512` |
+| Generation max length | `320` | `320` |
+| Per-device train batch size | `8` | `4` |
+| Per-device eval batch size | `8` | `4` |
+| Gradient accumulation steps | `2` | `4` |
+| Effective batch size | `16` | `16` |
+| Random seed | `42` | `42` |
+
+**Important:** the training script has architecture-dependent defaults. To reproduce the paper, explicitly pass `--learning_rate 3e-5` for **both** BART-base and T5-base.
+
+---
+
+## 7. Decoding Configuration
+
+The evaluation code uses model-specific tokenization with truncation at 1024 source tokens.
+
+The reported generation configuration is:
+
+```text
+generation_max_length = 320
+num_beams              = 4
+early_stopping         = True
+no_repeat_ngram_size   = 3
+```
+
+The released evaluation configuration is stored in:
+
+```text
+metrics/metrics_full/eval_config_rankB.json
+```
+
+That file also records the evaluated model directories, test files, BERTScore configuration, source/target limits, and random seed.
+
+---
+
+## 8. Reconstructing the Processed Dataset
+
+Place the arXiv dataset in the path expected by the builder, for example:
+
+```text
+./dataset/arxiv
+```
+
+Then inspect the available arguments:
+
+```bash
+python src/databuildt.py --help
+```
+
+A paper-matched reconstruction uses the study settings below:
+
+```bash
+python src/databuildt.py \
+  --arxiv_dir ./dataset/arxiv \
+  --output_dir ./prepared_data_rankB_fixed_v2 \
+  --train_limit 20000 \
+  --valid_limit 1000 \
+  --test_limit 500 \
+  --min_target_words 30 \
+  --max_target_words 512 \
+  --final_k 3 \
+  --noise_k 2 \
+  --min_chunks 1 \
+  --noise_pool_limit 10000 \
+  --noise_pool_strategy heldout_train_tail \
+  --test_noise_pool_offset 30000 \
+  --test_noise_pool_limit 10000 \
+  --substitutive_clean_k 1 \
+  --num_workers 2 \
+  --encode_batch_size 16 \
+  --paper_batch 100 \
+  --clean_control_mode unique \
+  --seed 42 \
+  --laptop_safe
+```
+
+The expected processed files are:
+
+```text
+prepared_data_rankB_fixed_v2/
+├── train_noiseaware.jsonl
+├── train_clean_matched.jsonl
+├── valid_noiseaware.jsonl
+├── valid_clean_matched.jsonl
+├── test_clean.jsonl
+├── test_noisy_easy_additive.jsonl
+├── test_noisy_hard_additive.jsonl
+├── test_noisy_easy_substitutive.jsonl
+└── test_noisy_hard_substitutive.jsonl
+```
+
+Each reported test condition contains **500 matched samples**.
+
+---
+
+## 9. Training
+
+### 9.1 BART-base noise-aware
+
+```bash
+python src/train/train_bart_t5_runpod.py \
+  --data_dir ./prepared_data_rankB_fixed_v2 \
+  --train_file train_noiseaware.jsonl \
+  --validation_file valid_noiseaware.jsonl \
+  --model_name facebook/bart-base \
+  --output_dir ./outputs/bart_t5_auto_1epoch/01_bart_base_noiseaware \
+  --num_train_epochs 1 \
+  --learning_rate 3e-5 \
+  --weight_decay 0.01 \
+  --warmup_ratio 0.03 \
+  --max_source_length 1024 \
+  --max_target_length 512 \
+  --generation_max_length 320 \
+  --generation_num_beams 4 \
+  --per_device_train_batch_size 8 \
+  --per_device_eval_batch_size 8 \
+  --gradient_accumulation_steps 2 \
+  --optim adamw_torch \
+  --seed 42
+```
+
+### 9.2 BART-base clean-matched
+
+```bash
+python src/train/train_bart_t5_runpod.py \
+  --data_dir ./prepared_data_rankB_fixed_v2 \
+  --train_file train_clean_matched.jsonl \
+  --validation_file valid_clean_matched.jsonl \
+  --model_name facebook/bart-base \
+  --output_dir ./outputs/bart_t5_auto_1epoch/02_bart_base_clean_matched \
+  --num_train_epochs 1 \
+  --learning_rate 3e-5 \
+  --weight_decay 0.01 \
+  --warmup_ratio 0.03 \
+  --max_source_length 1024 \
+  --max_target_length 512 \
+  --generation_max_length 320 \
+  --generation_num_beams 4 \
+  --per_device_train_batch_size 8 \
+  --per_device_eval_batch_size 8 \
+  --gradient_accumulation_steps 2 \
+  --optim adamw_torch \
+  --seed 42
+```
+
+### 9.3 T5-base noise-aware
+
+```bash
+python src/train/train_bart_t5_runpod.py \
+  --data_dir ./prepared_data_rankB_fixed_v2 \
+  --train_file train_noiseaware.jsonl \
+  --validation_file valid_noiseaware.jsonl \
+  --model_name google-t5/t5-base \
+  --output_dir ./outputs/bart_t5_auto_1epoch/03_t5_base_noiseaware \
+  --num_train_epochs 1 \
+  --learning_rate 3e-5 \
+  --weight_decay 0.01 \
+  --warmup_ratio 0.03 \
+  --max_source_length 1024 \
+  --max_target_length 512 \
+  --generation_max_length 320 \
+  --generation_num_beams 4 \
+  --per_device_train_batch_size 4 \
+  --per_device_eval_batch_size 4 \
+  --gradient_accumulation_steps 4 \
+  --optim adamw_torch \
+  --seed 42
+```
+
+### 9.4 T5-base clean-matched
+
+```bash
+python src/train/train_bart_t5_runpod.py \
+  --data_dir ./prepared_data_rankB_fixed_v2 \
+  --train_file train_clean_matched.jsonl \
+  --validation_file valid_clean_matched.jsonl \
+  --model_name google-t5/t5-base \
+  --output_dir ./outputs/bart_t5_auto_1epoch/04_t5_base_clean_matched \
+  --num_train_epochs 1 \
+  --learning_rate 3e-5 \
+  --weight_decay 0.01 \
+  --warmup_ratio 0.03 \
+  --max_source_length 1024 \
+  --max_target_length 512 \
+  --generation_max_length 320 \
+  --generation_num_beams 4 \
+  --per_device_train_batch_size 4 \
+  --per_device_eval_batch_size 4 \
+  --gradient_accumulation_steps 4 \
+  --optim adamw_torch \
+  --seed 42
+```
+
+All four runs use the same one-epoch budget and the same effective batch size of 16.
+
+---
+
+## 10. Evaluation
+
+The main evaluation script is:
+
+```text
+src/eval.py
+```
+
+A fresh generation-and-evaluation run can be launched with:
+
+```bash
+python src/eval.py \
+  --data_dir ./prepared_data_rankB_fixed_v2 \
+  --out_root ./outputs/bart_t5_auto_1epoch \
+  --output_dir ./reproduced_metrics \
+  --max_source_length 1024 \
+  --max_target_length 512 \
+  --generation_max_length 320 \
+  --num_beams 4 \
+  --batch_size 8 \
+  --bertscore_model roberta-large \
+  --bertscore_batch_size 8 \
+  --bertscore_max_length 512 \
+  --length_tokenizer facebook/bart-base \
+  --seed 42
+```
+
+If predictions have already been generated and only the metrics need to be recomputed, add:
+
+```bash
+--skip_generation
+```
+
+The released paper-level evaluation artifacts are available under:
+
+```text
+metrics/metrics_full/
+```
+
+---
+
+## 11. Evaluation Metrics
+
+The released evaluation pipeline reports:
+
+### Summary quality
+
+```text
+ROUGE-1
+ROUGE-2
+ROUGE-L
+ROUGE-Lsum
+BERTScore precision / recall / F1
+```
+
+### Statistical analysis
+
+```text
+paired t-test
+Wilcoxon signed-rank test
+Cohen's dz
+Cliff's delta
+rank-biserial correlation
+paired bootstrap 95% confidence interval
+Holm correction
+```
+
+### Diagnostic / support proxies
+
+```text
+source token lengths
+model-specific truncation rate
+target-source context composition
+source-supported entity rate
+unsupported entity rate
+number preservation
+source token support rate
+sentence-support proxy
+```
+
+The source-support measures are **sanity-check proxies**, not full factuality metrics.
+
+---
+
+## 12. Truncation-Aware Evidence Classification
+
+The study uses the following operational rules:
+
+| Truncation rate | Evidence status |
+|---:|---|
+| `<= 5%` | Primary |
+| `> 5% and <= 50%` | Qualified |
+| `> 50%` | Excluded from primary claims |
+
+These thresholds are **study-specific operational rules**, not universal literature-derived cutoffs.
+
+The observed truncation rates are:
+
+| Model | Condition | Truncation | Status |
+|---|---|---:|---|
+| BART | Clean | 1.4% | Primary |
+| BART | Query-aligned additive | 23.4% | Qualified |
+| BART | Query-distant additive | 20.0% | Qualified |
+| BART | Query-aligned substitutive | 1.6% | Primary |
+| BART | Query-distant substitutive | 1.0% | Primary |
+| T5 | Clean | 5.8% | Qualified |
+| T5 | Query-aligned additive | 78.8% | Excluded |
+| T5 | Query-distant additive | 75.4% | Excluded |
+| T5 | Query-aligned substitutive | 6.8% | Qualified |
+| T5 | Query-distant substitutive | 3.0% | Primary |
+
+---
+
+## 13. NER and TRR: Scope of the Current Release
+
+The full proposed framework defines two post-truncation exposure diagnostics.
+
+### Noise Exposure Rate (NER)
+
+$$
+NER = \frac{N_{\text{noise, retained}}}{N_{\text{noise, injected}}}
+$$
+
+### Target Retention Rate (TRR)
+
+$$
+TRR = \frac{N_{\text{target, retained}}}{N_{\text{target, pre-truncation}}}
+$$
+
+However, the original reported runs did **not** retain token-level target/noise provenance after model-specific tokenization and truncation.
+
+Therefore:
+
+```text
+- numerical NER is not claimed for the current runs;
+- numerical target-specific TRR is not claimed for the current runs;
+- aggregate input retention is not relabeled as TRR;
+- observed model-specific truncation rate is used as a conservative exposure diagnostic;
+- additive BART evidence is qualified;
+- additive T5 evidence is excluded from primary robustness claims.
+```
+
+This is why the study is framed as a **proof-of-concept empirical demonstration**, rather than a complete empirical validation of every diagnostic in the full protocol.
+
+A future fully instrumented run should retain per-token target/noise provenance after tokenization so that NER and TRR can be computed directly.
+
+---
+
+## 14. Main Findings
+
+The strongest numerical BART improvement occurs under **query-distant additive noise**, but that condition has a 20.0% truncation rate and is therefore treated as **qualified evidence**.
+
+For the primary low-truncation **query-distant substitutive** condition, the noise-aware BART checkpoint improves BERTScore F1 by approximately:
+
+```text
++0.0021
+```
+
+while the ROUGE differences are not statistically reliable after multiplicity correction.
+
+Accordingly, the paper interprets the primary result as a **small, condition-specific semantic-similarity effect**, not as a large or universal improvement in summary quality.
+
+T5 additive results are not used as primary robustness evidence because 75.4–78.8% of those inputs are truncated.
+
+---
+
+## 15. Reproducibility Notes
+
+To reproduce the reported study as closely as possible:
+
+```text
+1. Use seed 42.
+2. Use the exact 3e-5 learning rate for both architectures.
+3. Keep max source/target lengths at 1024/512.
+4. Use generation max length 320 and 4-beam decoding.
+5. Preserve the five matched evaluation conditions.
+6. Do not reinterpret legacy easy/hard labels as human difficulty.
+7. Treat T5 additive results as excluded from primary claims.
+8. Do not report NER/TRR unless token-level target/noise provenance is available.
+```
+
+The released file:
+
+```text
+metrics/metrics_full/eval_config_rankB.json
+```
+
+is the primary machine-readable record of the evaluation configuration used for the reported metrics.
+
+---
+
+## 16. Limitations
+
+The current study has several deliberate scope limitations.
+
+- One trained checkpoint pair per architecture is reported; the study does not estimate multi-seed training variability.
+- Paired bootstrap confidence intervals characterize uncertainty across matched test instances, not across independently trained seeds.
+- Token-level post-truncation provenance was not preserved in the original runs, so NER/TRR cannot be reconstructed retrospectively from the aggregate artifacts.
+- Retrieval source membership is a construction diagnostic, not a human annotation of summary relevance.
+- ROUGE and BERTScore do not provide full factuality verification.
+- The study evaluates BART-base and T5-base as proof-of-concept model families rather than as a comprehensive architecture benchmark.
+
+---
+
+## 17. Released Result Files
 
 | File | Purpose |
 |---|---|
-| `rankB_compact_paper_table.csv` | compact paper-level performance table |
-| `rankB_robustness_degradation.csv` | robustness retention/degradation |
-| `rankB_retrieval_summary.csv` | retrieval diagnostics |
-| `rankB_truncation_summary.csv` | truncation diagnostics |
-| `rankB_paired_noiseaware_vs_clean.csv` | statistical comparison |
-| `rankB_all_metrics_tables.xlsx` | complete workbook |
+| `rankB_compact_paper_table.csv` | Compact performance table |
+| `rankB_metrics_summary.csv` | Aggregate metric summary |
+| `rankB_metrics_record_level.csv` | Record-level evaluation data |
+| `rankB_paired_noiseaware_vs_clean.csv` | Paired checkpoint comparison |
+| `rankB_robustness_degradation.csv` | Clean/noisy robustness trade-offs |
+| `rankB_additive_vs_substitutive.csv` | Additive vs. substitutive comparison |
+| `rankB_retrieval_summary.csv` | Retrieval/context diagnostics |
+| `rankB_truncation_summary.csv` | Model-specific truncation diagnostics |
+| `rankB_all_metrics_tables.xlsx` | Consolidated workbook |
+| `eval_config_rankB.json` | Machine-readable evaluation configuration |
 
-## Key Findings
+---
 
-The final paper frames the results as a case study of the proposed evaluation protocol.
+## 18. Citation
 
-Main findings:
-
-- BART-base noise-aware training shows modest robustness gains under hard additive noise.
-- Substitutive noise provides a more reliable length-controlled diagnostic than additive noise.
-- T5-base additive-noise results are not used as primary robustness evidence because of high truncation.
-- Small BERTScore gains should be interpreted conditionally and weighed against clean-condition degradation and training cost.
-- Truncation diagnostics are essential for deciding whether a robustness claim is reliable.
-
-## Practical Interpretation
-
-This project does not claim that noise-aware training universally improves RAG summarization. Instead, it argues that robustness claims should be accepted only when:
-
-1. retrieval noise is verified;
-2. truncation is controlled or reported;
-3. additive results are checked against substitutive results;
-4. performance gains survive statistical testing;
-5. practical utility is positive after accounting for clean-condition trade-offs.
-
-## Citation
-
-If you use this repository, please cite the paper or repository as:
+If you use this repository, please cite the manuscript as:
 
 ```bibtex
-@misc{truncation_aware_rag_eval,
-  title        = {Truncation-Aware Evaluation Protocol for Noise-Aware RAG Summarization},
-  author       = {Your Name},
-  year         = {2026},
-  note         = {Evaluation framework and experimental pipeline for noise-aware RAG summarization}
+@unpublished{bao2026truncationaware,
+  author = {Bui Nguyen Gia Bao , Le Nhat Tung},
+  title  = {Truncation-Aware Robustness Evaluation for Scientific RAG Summarization: A Proof-of-Concept Study with BART and T5},
+  year   = {2026},
+  note   = {Manuscript under revision}
 }
 ```
 
-Please replace `Your Name` with the correct author information before public release.
+Please update the citation if a final journal citation becomes available.
 
-## Limitations
+---
 
-- Retrieval relevance is approximated by source-document membership rather than human relevance labels.
-- Faithfulness metrics are lightweight proxies and should not be interpreted as full factual consistency evaluation.
-- Results are based on BART-base and T5-base; larger long-context models may reduce truncation but require a different compute budget.
-- The study emphasizes evaluation validity rather than leaderboard-style performance optimization.
+## 19. License
 
-## License
+No explicit license file is currently included in this repository. Unless a license is added, reuse and redistribution are subject to the repository authors' copyright.
 
-- MIT License
-- Apache License 2.0
-- CC BY 4.0 for paper/materials
+---
 
-## Contact
+## 20. Contact
 
-For questions, issues, or reproduction details, please open a GitHub issue or contact the repository maintainer.
+For reproduction questions or issues with the released scripts/artifacts, please open a GitHub issue or contact the repository maintainers.
+
