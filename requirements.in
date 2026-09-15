@@ -1,0 +1,15 @@
+torch
+transformers
+datasets
+evaluate
+sentence-transformers
+faiss-cpu
+numpy
+pandas
+scipy
+scikit-learn
+rouge-score
+bert-score
+tqdm
+pyyaml
+openpyxl

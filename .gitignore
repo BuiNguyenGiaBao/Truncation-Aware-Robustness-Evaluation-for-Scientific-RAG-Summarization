@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+.env
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Model checkpoints
+checkpoints/
+outputs/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Large local datasets
+data/
+dataset/
+datasets/
+prepared_data*/
+*.jsonl
+
+# Caches
+.cache/
+huggingface/
+wandb/
+
+# Local generated artifacts
+runs/
+logs/
+tmp/

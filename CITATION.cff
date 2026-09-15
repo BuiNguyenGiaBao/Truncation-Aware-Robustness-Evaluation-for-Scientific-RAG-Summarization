@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this code or data-construction pipeline, please cite the associated manuscript."
+title: "Truncation-Aware Robustness Evaluation for Scientific RAG Summarization"
+type: software
+authors:
+  - family-names: "Bui"
+    given-names: "Nguyen Gia Bao"
+  - family-names: "Tran"
+    given-names: "Le Van"
+  - family-names: "Le"
+    given-names: "Nhat Tung"
+version: "revision-2026"
+date-released: "2026-09-15"
+repository-code: "https://github.com/BuiNguyenGiaBao/Analyzing-the-Impact-of-Retrieval-Noise-on-Retrieval-Augmented-Scientific-Text-Summarization"
