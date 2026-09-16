@@ -1,64 +1,57 @@
 study:
-  title: "Truncation-Aware Robustness Evaluation for Scientific RAG Summarization: A Proof-of-Concept Study with BART and T5"
   scope: "checkpoint-level proof-of-concept"
-  random_seed: 42
+  seed: 42
   multi_seed_replication: false
 
-common_training:
-  num_train_epochs: 1
-  optimizer: "AdamW (adamw_torch)"
-  learning_rate: 3.0e-5
-  weight_decay: 0.01
-  warmup_ratio: 0.03
-  max_source_length: 1024
-  max_target_length: 512
-  generation_max_length: 320
-  generation_num_beams: 4
-  early_stopping: true
-  no_repeat_ngram_size: 3
-  effective_batch_size: 16
-
-bart_base:
-  model_name: "facebook/bart-base"
-  per_device_train_batch_size: 8
-  per_device_eval_batch_size: 8
-  gradient_accumulation_steps: 2
-
-t5_base:
-  model_name: "google-t5/t5-base"
-  per_device_train_batch_size: 4
-  per_device_eval_batch_size: 4
-  gradient_accumulation_steps: 4
+training:
+  common:
+    num_train_epochs: 1
+    optimizer: "adamw_torch"
+    learning_rate: 3.0e-5
+    weight_decay: 0.01
+    warmup_ratio: 0.03
+    max_source_length: 1024
+    max_target_length: 512
+    generation_max_length: 320
+    generation_num_beams: 4
+    early_stopping: true
+    no_repeat_ngram_size: 3
+    effective_batch_size: 16
+  bart_base:
+    model_name: "facebook/bart-base"
+    per_device_train_batch_size: 8
+    per_device_eval_batch_size: 8
+    gradient_accumulation_steps: 2
+  t5_base:
+    model_name: "google-t5/t5-base"
+    per_device_train_batch_size: 4
+    per_device_eval_batch_size: 4
+    gradient_accumulation_steps: 4
 
 evaluation:
   matched_test_samples_per_condition: 500
-  conditions:
-    - clean
-    - query_aligned_additive
-    - query_distant_additive
-    - query_aligned_substitutive
-    - query_distant_substitutive
-  evidence_status_rules:
+  test_files:
+    - test_clean.jsonl
+    - test_noisy_easy_additive.jsonl
+    - test_noisy_hard_additive.jsonl
+    - test_noisy_easy_substitutive.jsonl
+    - test_noisy_hard_substitutive.jsonl
+  bertscore_model: "roberta-large"
+  evidence_status:
     primary: "truncation_rate <= 0.05"
     qualified: "0.05 < truncation_rate <= 0.50"
-    excluded_from_primary_claims: "truncation_rate > 0.50"
+    excluded: "truncation_rate > 0.50"
 
-reported_truncation_rates:
-  bart:
-    clean: 0.014
-    query_aligned_additive: 0.234
-    query_distant_additive: 0.200
-    query_aligned_substitutive: 0.016
-    query_distant_substitutive: 0.010
-  t5:
-    clean: 0.058
-    query_aligned_additive: 0.788
-    query_distant_additive: 0.754
-    query_aligned_substitutive: 0.068
-    query_distant_substitutive: 0.030
-
-provenance_limitation:
+provenance:
   post_truncation_target_noise_token_provenance_available: false
   empirical_ner_reported: false
   empirical_target_specific_trr_reported: false
-  note: "Truncation rate is used only for evidence-status screening, not as a numerical substitute for NER or TRR."
+
+noise_pool:
+  status: "MUST_VERIFY_BEFORE_RESUBMISSION"
+  manuscript_current_description: "shared training-pool distractor distribution"
+  public_builder_default: "heldout_train_tail"
+  supported_builder_options:
+    - heldout_train_tail
+    - legacy_train_pool
+  action: "Set this field to the strategy actually used to generate the reported Tables 4-8, then synchronize manuscript, README, and builder command."
