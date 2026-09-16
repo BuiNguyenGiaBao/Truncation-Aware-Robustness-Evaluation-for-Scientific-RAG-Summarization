@@ -1,7 +1,6 @@
 # Truncation-Aware Robustness Evaluation for Scientific RAG Summarization
 
-<<<<<<< HEAD
-=======
+
 
 
 **Truncation-Aware Robustness Evaluation for Scientific RAG Summarization: A Proof-of-Concept Study with BART and T5**
