@@ -5,10 +5,8 @@ type: software
 authors:
   - family-names: "Bui"
     given-names: "Nguyen Gia Bao"
-  - family-names: "Tran"
-    given-names: "Le Van"
   - family-names: "Le"
     given-names: "Nhat Tung"
 version: "revision-2026"
-date-released: "2026-09-16"
+date-released: "2026-09-18"
 repository-code: "https://github.com/BuiNguyenGiaBao/Truncation-Aware-Robustness-Evaluation-for-Scientific-RAG-Summarization"

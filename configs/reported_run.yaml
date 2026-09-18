@@ -48,10 +48,18 @@ provenance:
   empirical_target_specific_trr_reported: false
 
 noise_pool:
-  status: "MUST_VERIFY_BEFORE_RESUBMISSION"
-  manuscript_current_description: "shared training-pool distractor distribution"
-  public_builder_default: "heldout_train_tail"
-  supported_builder_options:
-    - heldout_train_tail
-    - legacy_train_pool
-  action: "Set this field to the strategy actually used to generate the reported Tables 4-8, then synchronize manuscript, README, and builder command."
+  strategy: "shared_training_pool"
+  status: "manuscript_aligned_reproduction_builder"
+  source_split: "train"
+  reused_for: [train, validation, test]
+  current_public_builder: "src/databuildt.py"
+  historical_exact_builder_snapshot_available: false
+  note: >
+    The current public builder implements the manuscript-described shared
+    training-derived cross-document distractor pool. The retained artifacts do
+    not prove byte-identical reconstruction of the historical data build.
+
+source_data:
+  builder_input_contract: "HuggingFace Dataset/DatasetDict with article and abstract fields"
+  raw_source_ingestion_script_in_repository: false
+  preparation_document: "docs/SOURCE_DATA_PREPARATION.md"

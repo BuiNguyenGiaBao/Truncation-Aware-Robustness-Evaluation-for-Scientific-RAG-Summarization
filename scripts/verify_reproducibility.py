@@ -4,8 +4,10 @@ import sys
 
 required = [
     "README.md",
+    "CITATION.cff",
     "configs/reported_run.yaml",
     "docs/REPRODUCIBILITY.md",
+    "docs/SOURCE_DATA_PREPARATION.md",
     "docs/DATASET_RECONSTRUCTION.md",
     "docs/ARTIFACTS.md",
     "docs/ENVIRONMENT.md",
@@ -20,29 +22,54 @@ required = [
     "metrics/metrics_full/rankB_truncation_summary.csv",
 ]
 
-missing = [p for p in required if not Path(p).exists()]
+problems = []
 
-print("Reproducibility file check")
-print("=" * 32)
+print("HUFLIT reproducibility consistency check")
+print("=" * 42)
+
 for p in required:
-    print(("[OK]   " if Path(p).exists() else "[MISS] ") + p)
+    ok = Path(p).exists()
+    print(("[OK]   " if ok else "[MISS] ") + p)
+    if not ok:
+        problems.append(f"missing:{p}")
 
-cfg = Path("configs/reported_run.yaml")
-if cfg.exists():
-    txt = cfg.read_text(encoding="utf-8", errors="replace")
-    if "MUST_VERIFY_BEFORE_RESUBMISSION" in txt:
-        print("\n[BLOCKER] Noise-pool strategy is still unverified in configs/reported_run.yaml")
-        missing.append("VERIFY_NOISE_POOL_STRATEGY")
+def read(p):
+    return Path(p).read_text(encoding="utf-8", errors="replace") if Path(p).exists() else ""
 
-readme = Path("README.md")
-if readme.exists():
-    txt = readme.read_text(encoding="utf-8", errors="replace")
-    if "\n=======\n" in txt or "<<<<<<<" in txt or ">>>>>>>" in txt:
-        print("\n[BLOCKER] README contains merge-conflict/duplicate markers.")
-        missing.append("FIX_README_MERGE_CONFLICT")
+readme = read("README.md")
+cfg = read("configs/reported_run.yaml")
+citation = read("CITATION.cff")
+noise_doc = read("docs/NOISE_POOL_ALIGNMENT.md")
+repro = read("docs/REPRODUCIBILITY.md")
+builder = read("src/databuildt.py")
 
-if missing:
-    print("\nStatus: NOT READY FOR RESUBMISSION")
+if any(x in readme for x in ["<<<<<<<", "\n=======\n", ">>>>>>>"]):
+    problems.append("README_merge_conflict")
+
+if "Tran Le Van" in readme or ('given-names: "Le Van"' in citation):
+    problems.append("obsolete_author_Tran_Le_Van")
+
+if "MUST_VERIFY_BEFORE_RESUBMISSION" in cfg:
+    problems.append("obsolete_noise_pool_blocker")
+
+if 'strategy: "shared_training_pool"' not in cfg:
+    problems.append("reported_run_missing_shared_training_pool")
+
+if "heldout_train_tail" in noise_doc:
+    problems.append("obsolete_heldout_noise_pool_doc")
+
+if "SOURCE_DATA_PREPARATION.md" not in repro:
+    problems.append("repro_doc_missing_source_prep_boundary")
+
+if "databuild_huflit_shared_pool.py" in builder:
+    problems.append("builder_docstring_old_filename")
+
+print()
+if problems:
+    print("Status: NOT READY")
+    for p in problems:
+        print(" -", p)
     sys.exit(1)
 
-print("\nStatus: BASIC REPRODUCIBILITY FILE CHECK PASSED")
+print("Status: BASIC CONSISTENCY CHECK PASSED")
+print("Note: this does not prove byte-identical historical processed-data reconstruction.")

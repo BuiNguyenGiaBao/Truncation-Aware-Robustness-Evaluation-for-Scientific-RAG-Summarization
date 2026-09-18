@@ -1,0 +1,11 @@
+Replacement / addendum for Reviewer Comment 4
+
+We agree and have substantially expanded the reproducibility information. In addition to the exact training and decoding settings, the revised manuscript now specifies the statistical procedure used for the reported paired comparisons: 10,000 paired-bootstrap resamples with seed 42, paired t-tests with Holm correction across the complete family of noise-aware-versus-clean-matched metric comparisons, and Cohen's d_z as the paired standardized mean difference.
+
+The public repository now documents a manuscript-aligned data-construction pipeline based on one shared cross-document distractor pool derived from the training split and reused for noisy training, validation, and test construction. The repository provides the current data builder, exact reported-run configuration, reconstruction instructions, evaluation code, and released aggregate/record-level artifacts.
+
+For transparency, the repository also states the source-data boundary of the released pipeline: `src/databuildt.py` expects a local article/abstract HuggingFace Dataset/DatasetDict. The repository therefore claims reproducibility of the manuscript-aligned RAG construction and evaluation pipeline from this input contract, rather than claiming a one-command raw-source-to-processed-data conversion or byte-identical reconstruction of the historical processed JSONL files.
+
+The remaining historical artifact limitation concerns post-truncation target/noise token provenance required for empirical NER/TRR, not the core reported training/evaluation configuration.
+
+Location in revised manuscript: Section IV-B; Section IV-C; Section IV-D; Section VIII; Section X. Repository materials: README.md; configs/reported_run.yaml; docs/SOURCE_DATA_PREPARATION.md; docs/DATASET_RECONSTRUCTION.md; docs/REPRODUCIBILITY.md; docs/ARTIFACTS.md; docs/ENVIRONMENT.md.

@@ -1,0 +1,7 @@
+Additional text for OTHER CHANGES AND REVISIONS
+
+The additive/substitutive description was further tightened to avoid implying that the substitutive condition isolates a pure retrieval-noise effect. The revised wording states that it reduces the confounding effect of input-length growth while jointly examining distractor exposure and reduced target-evidence availability.
+
+The repository documentation was synchronized with the manuscript-described shared training-derived distractor pool, and obsolete held-out-pool/blocker notes were removed from the reproducibility package.
+
+Authorship metadata in the repository was synchronized with the revised manuscript author list.

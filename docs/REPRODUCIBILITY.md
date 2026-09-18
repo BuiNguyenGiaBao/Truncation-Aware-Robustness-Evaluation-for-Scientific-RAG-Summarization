@@ -1,50 +1,33 @@
 # Reproducibility Guide
 
-## 1. Data source
+## 1. Prepare source text
 
-Use the Cornell University arXiv Dataset.
+Read `docs/SOURCE_DATA_PREPARATION.md`.
 
-## 2. Rebuild processed data
+The public builder expects a HuggingFace Dataset/DatasetDict with `article` and `abstract` fields. The repository does not claim a one-command raw-metadata/PDF ingestion pipeline.
 
-Inspect the builder interface:
+## 2. Rebuild manuscript-aligned RAG data
 
 ```bash
-python src/databuildt.py --help
+python src/databuildt.py   --arxiv_dir ./dataset/arxiv   --output_dir ./prepared_data_huflit   --train_limit 20000   --valid_limit 1000   --test_limit 500   --noise_pool_offset 20000   --noise_pool_limit 10000   --final_k 3   --noise_k 2   --substitutive_clean_k 1   --seed 42
 ```
 
-Reconstruct the five reported evaluation conditions with seed 42 and 500 matched test samples per condition.
-
-**Do not finalize the command until the noise-pool strategy used by the reported experiment has been verified.** See `NOISE_POOL_ALIGNMENT.md`.
+The builder uses one shared training-derived cross-document distractor pool and creates the five reported evaluation conditions.
 
 ## 3. Train the four reported checkpoints
 
-Use the exact settings in `configs/reported_run.yaml`.
+Use `configs/reported_run.yaml`.
 
-Reported checkpoints:
-
-```text
-BART-base clean-matched
-BART-base noise-aware
-T5-base clean-matched
-T5-base noise-aware
-```
-
-For T5, explicitly pass:
+For the reported runs, explicitly pass:
 
 ```text
 --learning_rate 3e-5
 --generation_max_length 320
 ```
 
-because the current training script defaults to `5e-5` for T5 and `256` generation length when these arguments are omitted.
+for both BART-base and T5-base, because the training script contains generic architecture-specific defaults.
 
 ## 4. Evaluate
-
-Inspect:
-
-```bash
-python src/eval.py --help
-```
 
 Use:
 
@@ -53,39 +36,24 @@ max_source_length = 1024
 max_target_length = 512
 generation_max_length = 320
 num_beams = 4
+BERTScore model = roberta-large
 seed = 42
 ```
 
-The released evaluation config is:
+The released evaluation configuration is `metrics/metrics_full/eval_config_rankB.json`.
 
-```text
-metrics/metrics_full/eval_config_rankB.json
-```
+The manuscript reports paired bootstrap 95% confidence intervals based on 10,000 resamples with seed 42, paired t-tests with Holm correction across the complete family of noise-aware-versus-clean-matched metric comparisons, and Cohen's d_z as the paired effect size.
 
-## 5. Verify outputs
+## 5. Scope restrictions
 
-The reproduction should regenerate:
+Do not report empirical NER/TRR from the retained historical artifacts because post-truncation target/noise token provenance was not retained.
 
-- aggregate ROUGE/BERTScore summaries;
-- paired noise-aware vs clean-matched comparisons;
-- truncation diagnostics;
-- additive-vs-substitutive tables;
-- robustness degradation tables.
+Do not generalize single-seed checkpoint findings to architecture-level stability.
 
-## 6. Scope restrictions
+The current builder is a manuscript-aligned reproducibility implementation; byte-identical historical processed-data reconstruction is not claimed.
 
-Do not report empirical NER/TRR from the current artifacts because post-truncation target/noise provenance was not retained.
+## 6. Environment
 
-Do not generalize single-seed checkpoint results to architecture-level stability.
+If the original RunPod environment is available, recover exact versions with `pip freeze`, Python, CUDA, PyTorch, and Transformers version information.
 
-## 7. Environment
-
-If the original RunPod environment is still available, export exact versions:
-
-```bash
-python --version
-pip freeze > requirements.txt
-nvidia-smi
-```
-
-If not available, keep `requirements.in` and state transparently that exact historical package versions were not preserved.
+If not, keep `requirements.in` and state transparently that exact historical package versions were not preserved.

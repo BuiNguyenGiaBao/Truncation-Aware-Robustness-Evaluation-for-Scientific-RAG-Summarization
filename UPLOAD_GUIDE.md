@@ -1,22 +1,24 @@
 # Upload Guide
 
-Copy these files/folders into the root of the existing GitHub repository:
+Replace / add these files:
 
 ```text
-README.md
-configs/
-docs/
-scripts/
-requirements.in
 CITATION.cff
-.gitignore
+configs/reported_run.yaml
+docs/NOISE_POOL_ALIGNMENT.md
+docs/REPRODUCIBILITY.md
+docs/SOURCE_DATA_PREPARATION.md
+docs/DATASET_RECONSTRUCTION.md
+docs/DATASET_REPRODUCTION.md
+docs/GITHUB_REVISION_CHECKLIST.md
+scripts/verify_reproducibility.py
 ```
 
-Keep the existing:
+Also apply the small text patches in:
 
 ```text
-src/
-metrics/
+README_PATCH.md
+src/databuildt_docstring.patch
 ```
 
 Then run:
@@ -25,4 +27,4 @@ Then run:
 python scripts/verify_reproducibility.py
 ```
 
-The verifier will intentionally fail until the noise-pool strategy used by the reported experiment is confirmed and `configs/reported_run.yaml` is updated.
+The check verifies repository consistency with the revised manuscript. It does not prove byte-identical historical processed-data reconstruction.

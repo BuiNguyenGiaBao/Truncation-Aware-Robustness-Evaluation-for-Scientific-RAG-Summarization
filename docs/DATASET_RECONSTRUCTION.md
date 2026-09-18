@@ -1,27 +1,48 @@
 # Dataset Reconstruction
 
-## Source
+## Starting point
 
-Cornell University arXiv Dataset.
+Use a local HuggingFace Dataset/DatasetDict with:
+
+```text
+train / validation / test
+article / abstract
+```
+
+See `SOURCE_DATA_PREPARATION.md`.
 
 ## Reported context composition
 
 ```text
-Clean:                     3 target chunks
-Query-aligned additive:    3 target + 2 noise
-Query-distant additive:    3 target + 2 noise
-Query-aligned substitutive: 1 target + 2 noise
-Query-distant substitutive: 1 target + 2 noise
+Clean:                      3 target chunks
+Query-aligned additive:     3 target + 2 distractors
+Query-distant additive:     3 target + 2 distractors
+Query-aligned substitutive: 1 target + 2 distractors
+Query-distant substitutive: 1 target + 2 distractors
 ```
 
 ## Chunking
-
-Reported fallback chunking:
 
 ```text
 maximum chunk size: approximately 150 words
 overlap: 30 words
 very short chunks discarded
+```
+
+## Noise pool
+
+The manuscript-aligned builder uses one cross-document distractor pool derived from the training split and reuses that source for noisy train/validation/test construction.
+
+## Similarity bands
+
+```text
+Query-aligned:
+  P70-P95
+  fallback P60-P98
+
+Query-distant:
+  bottom 10%
+  fallback bottom 20%
 ```
 
 ## Test files
@@ -34,20 +55,20 @@ test_noisy_easy_substitutive.jsonl
 test_noisy_hard_substitutive.jsonl
 ```
 
-Each reported test condition contains 500 matched samples.
+The reported evaluation uses 500 matched samples per condition.
 
-## Required validation checks
+## Required checks
 
-After rebuilding data, verify:
-
-- exactly five reported test conditions exist;
-- additive contexts contain 3 target + 2 distractors;
-- substitutive contexts contain 1 target + 2 distractors;
+Verify that:
+- all five conditions exist;
+- matched paper IDs are retained across conditions;
+- additive = 3 target + 2 distractors;
+- substitutive = 1 target + 2 distractors;
 - target/noise chunks are shuffled after merging;
 - distractors are cross-document;
-- seed is 42;
-- the selected noise-pool strategy matches the manuscript.
+- seed = 42;
+- `dataset_build_manifest.json` records the build settings.
 
-## Important provenance limitation
+## Provenance limitation
 
-The current aggregate artifacts do not preserve post-truncation target/noise token provenance. This prevents retrospective empirical NER/TRR calculation.
+The retained historical artifacts do not preserve post-truncation token-level target/noise provenance, so empirical NER and target-specific TRR cannot be reconstructed retrospectively.
